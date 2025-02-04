@@ -1,7 +1,8 @@
 <?php
 require_once 'config.php';
 
-function createUser($username, $password, $firstName, $lastName, $email) {
+function createUser($username, $password, $firstName, $lastName, $email)
+{
     $ldapconn = ldap_connect(LDAP_HOST);
     if (!$ldapconn) {
         error_log("Connexion LDAP échouée", 3, LOG_FILE);
@@ -15,6 +16,7 @@ function createUser($username, $password, $firstName, $lastName, $email) {
     if (!$ldapbind) {
         error_log("Connexion LDAP admin échouée", 3, LOG_FILE);
         return false;
+
     }
 
     $dn = "CN=$firstName $lastName," . LDAP_BASE_DN;
@@ -38,7 +40,8 @@ function createUser($username, $password, $firstName, $lastName, $email) {
     }
 }
 
-function deleteUser($username) {
+function deleteUser($username)
+{
     $ldapconn = ldap_connect(LDAP_HOST);
     if (!$ldapconn) {
         error_log("Connexion LDAP échouée", 3, LOG_FILE);
@@ -63,4 +66,5 @@ function deleteUser($username) {
         return false;
     }
 }
+
 ?>
