@@ -46,7 +46,6 @@ function deleteUser($username)
     if (!$ldapconn) {
         error_log("Connexion LDAP échouée", 3, LOG_FILE);
         return false;
-        
     }
 
     ldap_set_option($ldapconn, LDAP_OPT_PROTOCOL_VERSION, 3);
