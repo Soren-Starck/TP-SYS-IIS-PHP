@@ -55,6 +55,7 @@ function deleteUser($username)
     if (!$ldapbind) {
         error_log("Connexion LDAP admin échouée", 3, LOG_FILE);
         return false;
+        
     }
 
     $dn = "CN=$username," . LDAP_BASE_DN;
