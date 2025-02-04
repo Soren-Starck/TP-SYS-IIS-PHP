@@ -37,6 +37,7 @@ function createUser($username, $password, $firstName, $lastName, $email)
     } else {
         error_log("Échec de la création de l'utilisateur $username", 3, LOG_FILE);
         return false;
+
     }
 }
 
