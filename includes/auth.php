@@ -15,7 +15,6 @@ function authenticate($username, $password)
 
     $ldapbind = @ldap_bind($ldapconn, "$username@" . LDAP_DOMAIN, $password);
     if ($ldapbind) {
-        // Check if the user has administrative rights
         $search = ldap_search($ldapconn, LDAP_BASE_DN, "(sAMAccountName=$username)");
         $entries = ldap_get_entries($ldapconn, $search);
         if ($entries['count'] > 0 && in_array('admin', $entries[0]['memberOf'])) {
