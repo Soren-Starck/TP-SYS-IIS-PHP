@@ -12,32 +12,38 @@ function createUser($username, $password, $firstName, $lastName, $email)
     ldap_set_option($ldapconn, LDAP_OPT_PROTOCOL_VERSION, 3);
     ldap_set_option($ldapconn, LDAP_OPT_REFERRALS, 0);
 
-    $ldapbind = @ldap_bind($ldapconn, LDAP_ADMIN_USER, LDAP_ADMIN_PASSWORD);
+    $ldapbind = ldap_bind($ldapconn, LDAP_ADMIN_USER, LDAP_ADMIN_PASSWORD);
     if (!$ldapbind) {
-        error_log("Connexion LDAP admin échouée", 3, LOG_FILE);
+        error_log("Authentification échouée pour " . LDAP_ADMIN_USER, 3, LOG_FILE);
         return false;
     }
 
-    $dn = "CN=$firstName $lastName," . LDAP_BASE_DN;
-    $entry = [
-        'cn' => "$firstName $lastName",
-        'sn' => $lastName,
-        'givenName' => $firstName,
-        'mail' => $email,
-        'userPrincipalName' => "$username@" . LDAP_DOMAIN,
-        'sAMAccountName' => $username,
-        'objectClass' => ['top', 'person', 'organizationalPerson', 'user'],
-        'userPassword' => $password,
+    $dn = "CN=$firstName $lastName,OU=Users,DC=epul3a,DC=local";
+    $userInfo = [
+        "cn" => "$firstName $lastName",
+        "sn" => $lastName,
+        "givenName" => $firstName,
+        "sAMAccountName" => $username,
+        "userPrincipalName" => "$username@epul3a.local",
+        "mail" => $email,
+        "displayName" => "$firstName $lastName",
+        "userPassword" => $password,
+        "objectClass" => ["top", "person", "organizationalPerson", "user"]
     ];
 
-    if (ldap_add($ldapconn, $dn, $entry)) {
-        error_log("Utilisateur $username créé avec succès", 3, LOG_FILE);
+    if (ldap_add($ldapconn, $dn, $userInfo)) {
+        $disable = ["userAccountControl" => 514];
+        ldap_modify($ldapconn, $dn, $disable);
+
+        ldap_close($ldapconn);
         return true;
     } else {
-        error_log("Échec de la création de l'utilisateur $username", 3, LOG_FILE);
+        error_log("Échec de la création de l'utilisateur : " . ldap_error($ldapconn), 3, LOG_FILE);
+        ldap_close($ldapconn);
         return false;
     }
 }
+
 
 function deleteUser($username)
 {

@@ -1,23 +1,41 @@
 <?php
-require_once 'includes/auth.php';
-require_once 'includes/functions.php';
+include 'includes/config.php';
 
-if (!isLoggedIn()) {
-    header('Location: login.php');
-    exit;
-}
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $prenom = $_POST["prenom"];
+    $nom = $_POST["nom"];
+    $username = $_POST["username"];
+    $email = $_POST["email"];
+    $password = $_POST["password"];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $firstName = $_POST['firstName'];
-    $lastName = $_POST['lastName'];
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    $email = $_POST['email'];
+    $cn = "$prenom $nom";
+    $dn = "CN=$cn," . LDAP_BASE_DN;
+    $entry = [
+        "cn" => $username,
+        "givenName" => $prenom,
+        "sn" => $nom,
+        "mail" => $email,
+        "sAMAccountName" => $username,
+        "userPassword" => "{MD5}" . base64_encode(pack("H*", md5($password))),
+        "objectClass" => ["top", "person", "organizationalPerson", "user"]
+    ];
 
-    if (createUser($username, $password, $firstName, $lastName, $email)) {
-        $success = "Utilisateur créé avec succès!";
+    $ldap_conn = ldap_connect(LDAP_HOST);
+    if (!$ldap_conn) {
+        die("Erreur : Impossible de se connecter à LDAP.");
+    }
+
+    $ldap_bind = ldap_bind($ldap_conn, LDAP_ADMIN_USER, LDAP_ADMIN_PASSWORD);
+    if (!$ldap_bind) {
+        die("Erreur d'authentification LDAP : " . ldap_error($ldap_conn));
+    }
+
+    if (ldap_add($ldap_conn, $dn, $entry)) {
+        echo "Utilisateur ajouté avec succès.<br>";
+        header("Refresh: 1; url=dashboard.php");
+        exit();
     } else {
-        $error = "Échec de la création de l'utilisateur.";
+        echo "Erreur lors de l'ajout : " . ldap_error($ldap_conn) . "<br>";
     }
 }
 ?>
@@ -25,31 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Créer un utilisateur</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title>Ajouter un Utilisateur</title>
 </head>
 <body>
-<h1>Créer un utilisateur</h1>
-<?php if (isset($success)) echo "<p style='color:green;'>$success</p>"; ?>
-<?php if (isset($error)) echo "<p style='color:red;'>$error</p>"; ?>
 <form method="POST">
-    <label for="firstName">Prénom:</label>
-    <input type="text" id="firstName" name="firstName" required>
-    <br>
-    <label for="lastName">Nom:</label>
-    <input type="text" id="lastName" name="lastName" required>
-    <br>
-    <label for="username">Nom d'utilisateur:</label>
-    <input type="text" id="username" name="username" required>
-    <br>
-    <label for="password">Mot de passe:</label>
-    <input type="password" id="password" name="password" required>
-    <br>
-    <label for="email">E-mail:</label>
-    <input type="email" id="email" name="email" required>
-    <br>
-    <button type="submit">Créer</button>
+    <label>Prénom:</label> <input type="text" name="prenom" required><br>
+    <label>Nom:</label> <input type="text" name="nom" required><br>
+    <label>Nom d'utilisateur:</label> <input type="text" name="username" required><br>
+    <label>Email:</label> <input type="email" name="email" required><br>
+    <label>Mot de passe:</label> <input type="password" name="password" required><br>
+    <button type="submit">Ajouter</button>
 </form>
 </body>
 </html>
